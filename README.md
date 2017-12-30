@@ -1,7 +1,7 @@
 # Bounty Monitor
 Leverage certificate transparency live feed to monitor for newly issued subdomain cerficates, for domains participating in bug bounty programs
 ### Installation
-The script was tested on Python2.7
+The script was tested on Python2.7 and python3.6
 
 Clone repo and install packages:
 
@@ -23,6 +23,8 @@ Subdomain database `subdomains.db` is initaillized and maintained locally to kee
 ## Inspired by
 1. [bucket-stream](https://github.com/eth0izzle/bucket-stream) - Find interesting Amazon S3 Buckets
 2. [phishing_catcher](https://github.com/x0rz/phishing_catcher) - Catching malicious phishing domain names
+3. [bug-bounty-list.txt](https://gist.github.com/Plazmaz/c615559f0d71168c831583778afdb0b9) - A list of bug bounty urls
+
 
 License
 ----
