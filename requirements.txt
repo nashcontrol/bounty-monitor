@@ -1,0 +1,11 @@
+certifi==2017.11.5
+certstream==1.8
+chardet==3.0.4
+idna==2.6
+requests==2.18.4
+six==1.11.0
+termcolor==1.1.0
+tld==0.7.9
+tqdm==4.19.5
+urllib3==1.22
+websocket-client==0.45.0
