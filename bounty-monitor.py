@@ -65,7 +65,8 @@ class MonitorWorker(Thread):
                 self.log(new_subdomain, True)
 
             except Exception as e:
-                print (e)
+                #print (e)
+                pass
             finally:
                 self.q.task_done()
 
