@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright (c) 2017 @nashcontrol
+# Copyright (c) 2018 @nashcontrol
 
 import os
 import argparse
@@ -7,6 +7,9 @@ import logging
 import sqlite3
 import re
 import time as t
+import socket
+import ssl
+import threading
 
 #python 2 and 3 compatibilities
 try:
@@ -15,7 +18,7 @@ except ImportError:
     from Queue import Queue
 
 from datetime import datetime
-from threading import Thread
+import bs4
 from termcolor import colored
 from tld import get_tld
 import requests
@@ -23,23 +26,25 @@ from requests.adapters import HTTPAdapter
 import tqdm
 import certstream
 
+
 # Current execution list
 QUEUE_SIZE = 100
-FOUND_SUBDOMAINS = list()
 INTERNAL_DOMAINS = list()
 BOUNTY_LIST = [line.strip() for line in open('bug-bounty-list.txt')]
 MONITOR_QUEUE = Queue(maxsize=QUEUE_SIZE)
-pbar = tqdm.tqdm(desc='certificate_update', unit='cert')
+PBAR = tqdm.tqdm(desc='certificate_update', unit='cert')
 
 # Maintain list of found sub-domains in a database
 DATABASE = 'subdomains.db'
 CONNECTION = sqlite3.connect(DATABASE, check_same_thread=False)
 DB_CURSOR = CONNECTION.cursor()
+LOCK = threading.Lock()
 
 
-class MonitorWorker(Thread):
-    def __init__(self, q, *args, **kwargs):
+class MonitorWorker(threading.Thread):
+    def __init__(self, q, subdomain_age, *args, **kwargs):
         self.q = q
+        self.subdomain_age = subdomain_age
         self.session = requests.Session()
         self.session.mount("https://", HTTPAdapter(max_retries=2))
 
@@ -47,26 +52,35 @@ class MonitorWorker(Thread):
 
     def run(self):
         while True:
+            new_subdomain = self.q.get()
+            self.log(new_subdomain, False)
+            subdomain_age, connection_status = self.ssl_creation_datetime(new_subdomain)
             try:
-                new_subdomain = self.q.get()
+                # Check if subdomain is new
+                if (subdomain_age >= 0) and (subdomain_age < self.subdomain_age):              
+                    # Check new subdomain is already live
+                    check_response = self.session.get("https://" + new_subdomain, timeout=3)
+                    page_title = bs4.BeautifulSoup(check_response.text, "html.parser").title
+                    if (page_title is not None):
+                        page_title = page_title.text.encode('utf8')
+                    tqdm.tqdm.write(
+                        "[!] Subdomain found and it is alive: "
+                        "{} , (Domain age: {} days), (Title={}), (response code={})".format(colored(new_subdomain, 'green', attrs=['underline', 'bold']), subdomain_age, page_title, check_response.status_code))
+                    update_subdomain(new_subdomain, "Y")
+                    # TODO: check S3 matching buckets
+                    self.log(new_subdomain, True)
+                else:
+                    tqdm.tqdm.write(
+                        "[!] Subdomain found: "
+                        "{} Domain age: {} days (obtain certificate from server = {}) ".format(colored(new_subdomain, 'white', attrs=['underline']),subdomain_age,connection_status))
+
+
                 self.log(new_subdomain, False)
-                tqdm.tqdm.write(
-                    "[!] New subdomain found: "
-                    "{}".format(colored(new_subdomain, 'white', attrs=['underline'])))
-
-                # Check new subdomain is already live
-                check_response = self.session.head("https://" + new_subdomain, timeout=3)
-                tqdm.tqdm.write(
-                    "[!] Subdomain is alive: "
-                    "{} (response code={})".format(colored(new_subdomain, 'green', attrs=['underline', 'bold']), check_response.status_code))
-                update_subdomain(new_subdomain, "Y")
-
-                # TODO: check S3 matching buckets
-                self.log(new_subdomain, True)
 
             except Exception as e:
-                #print (e)
-                pass
+                logging.exception("message")
+                print (e)
+                print ("Error occured while processing: %s " % new_subdomain)
             finally:
                 self.q.task_done()
 
@@ -80,6 +94,25 @@ class MonitorWorker(Thread):
 
         with open("all_subdomains.log", "a+") as log:
             log.write("%s%s" % (new_subdomain, os.linesep))
+
+    def ssl_creation_datetime(self, hostname):
+        ssl_date_fmt = r'%b %d %H:%M:%S %Y %Z'
+
+        context = ssl.create_default_context()
+        conn = context.wrap_socket(
+            socket.socket(socket.AF_INET),
+            server_hostname=hostname,
+        )
+        try:
+            conn.connect((hostname, 443))
+            ssl_info = conn.getpeercert()
+            # parse the string from the certificate into a Python datetime object
+            return (datetime.now() - datetime.strptime(ssl_info['notBefore'], ssl_date_fmt)).days, "OK"
+        except socket.error:
+            return -1, "Unreachable"
+        except ssl.SSLError:
+            print (conn.getpeercert()['notBefore'])
+            return -1, "Certificate Error"
 
 
 def check_subdomain_not_known_in_db(subdomain):
@@ -99,14 +132,18 @@ def check_subdomain_not_known_in_db(subdomain):
 
 def update_subdomain(subdomain, alive):
     """Subdomain database is maintained locally to keep track of identified live and known subdomains."""
-
     tld = get_tld(subdomain, as_object=True, fail_silently=True, fix_protocol=True)
-    if alive == "N":
-        DB_CURSOR.execute("insert into subdomains(subdomain, domain, first_found, alive, source) values(?, ?, ?, ?, ?)", (subdomain, tld.tld, datetime.now(), 0, "BountyMonitor"))
-        CONNECTION.commit()
-    elif alive == "Y":
-        DB_CURSOR.execute("update subdomains set alive=1 where subdomain = ?", (subdomain, ))
-        CONNECTION.commit()
+    try:
+        #synchronize multithread DB_CURSOR.execute
+        LOCK.acquire(True)
+        if alive == "N":
+            DB_CURSOR.execute("insert into subdomains(subdomain, domain, first_found, alive, source) values(?, ?, ?, ?, ?)", (subdomain, tld.tld, datetime.now(), 0, "BountyMonitor"))
+            CONNECTION.commit()
+        elif alive == "Y":
+            DB_CURSOR.execute("update subdomains set alive=1 where subdomain = ?", (subdomain, ))
+            CONNECTION.commit()
+    finally:
+        LOCK.release()
 
 
 def monitor(message, context):
@@ -118,9 +155,9 @@ def monitor(message, context):
 
     if message["message_type"] == "certificate_update":
         all_domains = message["data"]["leaf_cert"]["all_domains"]
-
+        
     for domain in set(all_domains):
-        pbar.update(1)
+        PBAR.update(1)
 
         # all magic happens here
         try:
@@ -138,10 +175,8 @@ def monitor(message, context):
 
 
 def init_db():
-    global FOUND_SUBDOMAINS
     try:
         DB_CURSOR.execute("select subdomain from subdomains")
-        FOUND_SUBDOMAINS = DB_CURSOR.fetchall()
 
     except:
         # DB is empty
@@ -166,6 +201,7 @@ def main():
     parser.add_argument("-l", "--log", dest="log_to_file", default=True, action="store_true", help="Log found subdomains to all_subdomains.log and ones that are live to live_subdomains.log")
     parser.add_argument("-S-no_probe_s3_bucket", dest="probe_s3_bucket", default=True, action="store_true", help="Do not attempt to guess associated S3 buckets based on the new subdomain name")
     parser.add_argument("-t", "--threads", metavar="", type=int, dest="threads", default=10, help="Number of threads to spawn.")
+    parser.add_argument("-d", "--days", metavar="", type=int, dest="subdomain_age", default=90, help="Number of days since current certificate registration.")
 
     args = parser.parse_args()
     logging.disable(logging.WARNING)
@@ -173,9 +209,11 @@ def main():
     init_db()
 
     for _ in range(1, args.threads):
-        thread = MonitorWorker(MONITOR_QUEUE)
+        thread = MonitorWorker(MONITOR_QUEUE,args.subdomain_age)
         thread.setDaemon(True)
         thread.start()
+    
+    # TODO: check if previously found subdomain is alive every 30 minutes
 
     print ("Waiting for certstream events - this could take a few minutes to queue up...")
     certstream.listen_for_events(monitor)  # this is blocking, so I added some sleep..
