@@ -111,7 +111,7 @@ class MonitorWorker(threading.Thread):
         except socket.error:
             return -1, "Unreachable"
         except ssl.SSLError:
-            print (conn.getpeercert()['notBefore'])
+            print(conn.getpeercert()['notBefore'])
             return -1, "Certificate Error"
 
 
@@ -163,7 +163,7 @@ def monitor(message, context):
         try:
             if domain.count(".") > 1 and not domain.startswith("*.") and not re.search("\d$", domain) and "cloudflaressl" not in domain and "xn--" not in domain and not domain.endswith("local"):
                 tld = get_tld(domain, as_object=True, fail_silently=True, fix_protocol=True)
-                if tld.tld in BOUNTY_LIST and tld.tld != domain and tld.subdomain != "www":
+                if tld is not None and tld.tld in BOUNTY_LIST and tld.tld != domain and tld.subdomain != "www":
                     if check_subdomain_not_known_in_db(domain):
                         update_subdomain(domain, "N")
                         MONITOR_QUEUE.put(domain)
