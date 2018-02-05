@@ -42,9 +42,11 @@ LOCK = threading.Lock()
 
 
 class MonitorWorker(threading.Thread):
-    def __init__(self, q, subdomain_age, *args, **kwargs):
+    def __init__(self, q, subdomain_age, log_filename="subdomains", verbose=False, *args, **kwargs):
         self.q = q
         self.subdomain_age = subdomain_age
+        self.log_filename = log_filename
+        self.verbose = verbose
         self.session = requests.Session()
         self.session.mount("https://", HTTPAdapter(max_retries=2))
 
@@ -69,7 +71,7 @@ class MonitorWorker(threading.Thread):
                     update_subdomain(new_subdomain, "Y")
                     # TODO: check S3 matching buckets
                     self.log(new_subdomain, True)
-                else:
+                elif self.verbose:
                     tqdm.tqdm.write(
                         "[!] Subdomain found: "
                         "{} Domain age: {} days (obtain certificate from server = {}) ".format(colored(new_subdomain, 'white', attrs=['underline']),subdomain_age,connection_status))
@@ -85,14 +87,14 @@ class MonitorWorker(threading.Thread):
                 self.q.task_done()
 
     def log(self, new_subdomain, live):
-        """Log file created with all subdomains found subdomains to all_subdomains.log and ones that are live to live_subdomains.log"""
+        """Log file created with all subdomains found subdomains to all_subdomains.log and ones that are live to live_subdomains.log (default)"""
 
         if live:
-            with open("live_subdomains.log", "a+") as log:
+            with open("live_%s.log" % self.log_filename, "a+") as log:
                 log.write("%s%s" % (new_subdomain, os.linesep))
             return
 
-        with open("all_subdomains.log", "a+") as log:
+        with open("all_%s.log" % self.log_filename, "a+") as log:
             log.write("%s%s" % (new_subdomain, os.linesep))
 
     def ssl_creation_datetime(self, hostname):
@@ -113,6 +115,13 @@ class MonitorWorker(threading.Thread):
         except ssl.SSLError:
             print(conn.getpeercert()['notBefore'])
             return -1, "Certificate Error"
+        except ssl.CertificateError:
+            print(conn.getpeercert()['notBefore'])
+            return -1, "Certificate Error"
+        finally:
+            conn.shutdown(socket.SHUT_RDWR)
+            conn.close()
+
 
 
 def check_subdomain_not_known_in_db(subdomain):
@@ -199,9 +208,10 @@ def main():
         usage="python bounty_monitor.py",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("-l", "--log", dest="log_to_file", default=True, action="store_true", help="Log found subdomains to all_subdomains.log and ones that are live to live_subdomains.log")
-    parser.add_argument("-S-no_probe_s3_bucket", dest="probe_s3_bucket", default=True, action="store_true", help="Do not attempt to guess associated S3 buckets based on the new subdomain name")
+    parser.add_argument("--no_probe_s3_bucket", dest="probe_s3_bucket", default=True, action="store_true", help="Do not attempt to guess associated S3 buckets based on the new subdomain name")
     parser.add_argument("-t", "--threads", metavar="", type=int, dest="threads", default=10, help="Number of threads to spawn.")
     parser.add_argument("-d", "--days", metavar="", type=int, dest="subdomain_age", default=90, help="Number of days since current certificate registration.")
+    parser.add_argument("-v", "--verbose", metavar="", type=int, dest="verbose", default=False, help="Increased verbosity, prints all identifed subdomains  matching the bugbounty list")
 
     args = parser.parse_args()
     logging.disable(logging.WARNING)
@@ -209,7 +219,7 @@ def main():
     init_db()
 
     for _ in range(1, args.threads):
-        thread = MonitorWorker(MONITOR_QUEUE,args.subdomain_age)
+        thread = MonitorWorker(MONITOR_QUEUE,args.subdomain_age,args.log_to_file,args.verbose)
         thread.setDaemon(True)
         thread.start()
     
