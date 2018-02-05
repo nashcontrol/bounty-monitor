@@ -108,6 +108,7 @@ class MonitorWorker(threading.Thread):
         try:
             conn.connect((hostname, 443))
             ssl_info = conn.getpeercert()
+            conn.shutdown(socket.SHUT_RDWR)
             # parse the string from the certificate into a Python datetime object
             return (datetime.now() - datetime.strptime(ssl_info['notBefore'], ssl_date_fmt)).days, "OK"
         except socket.error:
@@ -119,7 +120,6 @@ class MonitorWorker(threading.Thread):
             print(conn.getpeercert()['notBefore'])
             return -1, "Certificate Error"
         finally:
-            conn.shutdown(socket.SHUT_RDWR)
             conn.close()
 
 
