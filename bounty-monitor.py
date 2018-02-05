@@ -117,7 +117,6 @@ class MonitorWorker(threading.Thread):
             print(conn.getpeercert()['notBefore'])
             return -1, "Certificate Error"
         except ssl.CertificateError:
-            print(conn.getpeercert()['notBefore'])
             return -1, "Certificate Error"
         finally:
             conn.close()
