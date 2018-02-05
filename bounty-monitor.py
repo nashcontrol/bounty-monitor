@@ -207,7 +207,7 @@ def main():
         description="Leverage certificate transparency live feed to monitor for newly issued subdomain cerficates, for domains participating in bug bounty programs",
         usage="python bounty_monitor.py",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("-l", "--log", dest="log_to_file", default=True, action="store_true", help="Log found subdomains to all_subdomains.log and ones that are live to live_subdomains.log")
+    parser.add_argument("-l", "--log", dest="log_to_file", default="subdomains", action="store_true", help="Log found subdomains to all_subdomains.log and ones that are live to live_subdomains.log")
     parser.add_argument("--no_probe_s3_bucket", dest="probe_s3_bucket", default=True, action="store_true", help="Do not attempt to guess associated S3 buckets based on the new subdomain name")
     parser.add_argument("-t", "--threads", metavar="", type=int, dest="threads", default=10, help="Number of threads to spawn.")
     parser.add_argument("-d", "--days", metavar="", type=int, dest="subdomain_age", default=90, help="Number of days since current certificate registration.")
