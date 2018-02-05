@@ -67,7 +67,7 @@ class MonitorWorker(threading.Thread):
                         page_title = page_title.text.encode('utf8')
                     tqdm.tqdm.write(
                         "[!] Subdomain found and it is alive: "
-                        "{} , (Domain age: {} days), (Title={}), (response code={})".format(colored(new_subdomain, 'green', attrs=['underline', 'bold']), subdomain_age, page_title, check_response.status_code))
+                        "{}, (Domain age: {} days), (Title={}), (response code={})".format(colored(new_subdomain, 'green', attrs=['underline', 'bold']), subdomain_age, page_title, check_response.status_code))
                     update_subdomain(new_subdomain, "Y")
                     # TODO: check S3 matching buckets
                     self.log(new_subdomain, True)

@@ -1,5 +1,6 @@
 # Bounty Monitor
-Leverage certificate transparency live feed to monitor for newly issued subdomain cerficates, for domains participating in bug bounty programs
+Leverage certificate transparency live feed to monitor for newly issued subdomain certificates (last 90 days, configurable), for domains participating in bug bounty programs
+
 ### Installation
 The script was tested on Python2.7 and python3.6
 
@@ -16,9 +17,9 @@ python bounty-monitor.py
 ```
 
 ### Analyze the results
-Log file created with all subdomains found subdomains to `all_subdomains.log` and ones that are live to `live_subdomains.log`
+Log file created with all found subdomains to `all_subdomains.log` and ones that are live and aged less than 90 days to `live_subdomains.log`
 
-Subdomain database `subdomains.db` is initaillized and maintained locally to keep track of identified live and known subdomains.
+Subdomain database `subdomains.db` is initialized and maintained locally to keep track of identified live and known subdomains.
 
 ## Inspired by
 1. [bucket-stream](https://github.com/eth0izzle/bucket-stream) - Find interesting Amazon S3 Buckets
