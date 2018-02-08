@@ -56,15 +56,15 @@ class MonitorWorker(threading.Thread):
         while True:
             new_subdomain = self.q.get()
             self.log(new_subdomain, False)
-            subdomain_age, connection_status = self.ssl_creation_datetime(new_subdomain)
             try:
+                subdomain_age, connection_status = self.ssl_creation_datetime(new_subdomain)
                 # Check if subdomain is new
                 if (subdomain_age >= 0) and (subdomain_age < self.subdomain_age):              
                     # Check new subdomain is already live
                     check_response = self.session.get("https://" + new_subdomain, timeout=3)
                     page_title = bs4.BeautifulSoup(check_response.text, "html.parser").title
                     if (page_title is not None):
-                        page_title = page_title.text.encode('utf8')
+                        page_title = page_title.text.encode('utf8').strip()
                     tqdm.tqdm.write(
                         "[!] Subdomain found and it is alive: "
                         "{}, (Domain age: {} days), (Title={}), (response code={})".format(colored(new_subdomain, 'green', attrs=['underline', 'bold']), subdomain_age, page_title, check_response.status_code))
@@ -76,13 +76,10 @@ class MonitorWorker(threading.Thread):
                         "[!] Subdomain found: "
                         "{} Domain age: {} days (obtain certificate from server = {}) ".format(colored(new_subdomain, 'white', attrs=['underline']),subdomain_age,connection_status))
 
-
                 self.log(new_subdomain, False)
 
             except Exception as e:
-                logging.exception("message")
-                print (e)
-                print ("Error occured while processing: %s " % new_subdomain)
+                logging.exception("Subdomain found but an error occured while processing: %s " % new_subdomain)
             finally:
                 self.q.task_done()
 
@@ -202,6 +199,8 @@ def get_subdomains_for_domain(domain):
 
 
 def main():
+    logging.basicConfig(filename='bounty_errors.log', level=logging.ERROR, format='%(asctime)s - %(levelname)s - %(message)s')
+
     parser = argparse.ArgumentParser(
         description="Leverage certificate transparency live feed to monitor for newly issued subdomain cerficates, for domains participating in bug bounty programs",
         usage="python bounty_monitor.py",
