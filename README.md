@@ -4,7 +4,7 @@ Leverage certificate transparency live feed to monitor for newly issued subdomai
 ![Demo](https://i.imgur.com/VpetOcb.png)
 
 ### Installation
-The script was tested on Python2.7 and python3.6
+The script was tested on Python2.7 and Python3.6
 
 Clone repo and install packages:
 
