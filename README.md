@@ -1,5 +1,7 @@
 # Bounty Monitor
-Leverage certificate transparency live feed to monitor for newly issued subdomain certificates (last 90 days, configurable), for domains participating in bug bounty programs
+Leverage certificate transparency live feed to monitor for newly issued subdomain certificates (last 90 days, configurable), for domains participating in bug bounty programs.
+
+![Demo](https://i.imgur.com/VpetOcb.png)
 
 ### Installation
 The script was tested on Python2.7 and python3.6
