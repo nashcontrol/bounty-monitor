@@ -291,3 +291,5 @@ zynga.com
 united.com
 continental.com
 gm.com
+teavana.com
+starbucks.com
