@@ -5,9 +5,7 @@ acquia.com
 activecampaign.com
 activeprospect.com
 adobe.com
-adobe.com
 aerofs.com
-airbnb.com
 airbnb.com
 algolia.net
 algolianet.com
@@ -33,7 +31,6 @@ astaro.org
 atlassian.com
 att.com
 attack-secure.com
-authy.com
 authy.com
 automattic.com
 avast.com
@@ -129,7 +126,6 @@ fogcreek.com
 formassembly.com
 foursquare.com
 freelancer.com
-freelancer.com
 freemarket.com
 fw-notify.net
 galleryproject.org
@@ -140,7 +136,6 @@ getdpd.com
 getpocket.com
 getsidekick.com
 giftcards.com
-github.com
 github.com
 gitlab.com
 glasswire.com
@@ -177,12 +172,10 @@ ifixit.com
 ikarem.io
 inbound.org
 indeed.com
-indeed.com
 instapaper.com
 integraxor.com
 invisionapp.com
 irccloud-cdn.com
-irccloud.com
 irccloud.com
 itrp.com.au
 jet.com
@@ -262,7 +255,6 @@ pidgin.im
 pikapay.com
 pinoyhacknews.com
 pinterest.com
-pinterest.com
 piwik.org
 plone.org
 postmarkapp.com
@@ -270,7 +262,6 @@ prezi.com
 pscp.tv
 pullreview.com
 puppetlabs.com
-purevpn.com
 purevpn.com
 python.org
 quora.com
@@ -300,7 +291,6 @@ shopify.com
 sifterapp.com
 silentcircle.com
 simple.com
-simple.com
 siteground.com
 skoodat.com
 slack.com
@@ -314,9 +304,7 @@ spotify.com
 sproutsocial.com
 square.com
 squareup.com
-squareup.com
 starbucks.com
-statuspage.io
 statuspage.io
 stopthehacker.com
 sucuri.net
@@ -335,16 +323,13 @@ teslamotors.com
 tls.mbed.org
 tuenti.com
 twilio.com
-twilio.com
 twimg.com
 twitch.tv
-twitter.com
 twitter.com
 uber.com
 ubnt.com
 unitag.io
 united.com
-urbandictionary.com
 urbandictionary.com
 urbandictionary.net
 valvesoftware.com
