@@ -25,6 +25,6 @@ six==1.11.0
 termcolor==1.1.0
 tld==0.7.9
 tqdm==4.19.5
-urllib3==1.23
+urllib3==1.24.2
 websocket-client==0.45.0
 wrapt==1.10.11
