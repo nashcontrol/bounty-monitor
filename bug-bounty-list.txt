@@ -63,7 +63,6 @@ card.com
 cash.me
 ccbill.com
 chargify.com
-checkpoint.com
 chromium.org
 circleci.com
 cisco.com
@@ -100,7 +99,6 @@ dropbox.com
 drupal.org
 ebay.com
 eclipse.org
-eccouncil.org
 electroneum.com
 ellislab.com
 emc.com
@@ -176,7 +174,6 @@ inbound.org
 indeed.com
 instapaper.com
 integraxor.com
-intel.com
 invisionapp.com
 irccloud-cdn.com
 irccloud.com
@@ -282,7 +279,6 @@ riskalyze.com
 ruby-lang.org
 rubyonrails.org
 salesforce.com
-sans.org
 samsung.com
 sap.com
 schubergphilis.com
