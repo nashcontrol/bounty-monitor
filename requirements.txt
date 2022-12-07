@@ -3,7 +3,7 @@ astroid==1.6.0
 backports.functools-lru-cache==1.4
 beautifulsoup4==4.6.0
 bs4==0.0.1
-certifi==2017.11.5
+certifi==2022.12.7
 certstream==1.8
 cffi==1.11.2
 chardet==3.0.4
